@@ -24,7 +24,10 @@ int main(int argc, char** argv)
   // Initialize single-threaded executor
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node);
-  std::thread([&executor]() { executor.spin(); }).detach();
+  // std::thread([&executor]() { executor.spin(); }).detach();
+  std::thread spin_thread([&executor]() {
+      executor.spin();
+  });
 
   // Load in robot model
   robot_model_loader::RobotModelLoaderPtr robot_model_loader(
@@ -41,10 +44,12 @@ int main(int argc, char** argv)
 
   // Get robot model (with accompanying kinematics)
   moveit::core::RobotModelPtr robot_model = robot_model_loader->getModel();
+  // moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(robot_model));
+  // robot_state->setToDefaultValues();
 
   // Lock scene state to get latest robot state information
   moveit::core::RobotStatePtr robot_state(
-      new moveit::core::RobotState(planning_scene_monitor::LockedPlanningSceneRO(psm)->getCurrentState()));
+      new moveit::core::RobotState(planning_scene_monitor::LockedPlanningSceneRO(psm)->getCurrentState()));  
 
   // Get current joint state (useful for keeping track of)
   const moveit::core::JointModelGroup* joint_model_group = robot_state->getJointModelGroup("panda_arm");
@@ -54,9 +59,8 @@ int main(int argc, char** argv)
       new planning_pipeline::PlanningPipeline(robot_model, node, "ompl"));
     
   namespace rvt = rviz_visual_tools;
-  moveit_visual_tools::MoveItVisualTools visual_tools(node, "panda_link0", "move_group_tutorial", psm);
+  moveit_visual_tools::MoveItVisualTools visual_tools(node, "panda_link0", "task_space_rrtc_planner", psm);
   visual_tools.deleteAllMarkers();
-
   visual_tools.loadRemoteControl();
 
   // Display example text
@@ -67,6 +71,13 @@ int main(int argc, char** argv)
   visual_tools.trigger();
   visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the example");
 
+  // Pose starting position
+  /*(
+  robot_state = planning_scene_monitor::LockedPlanningSceneRO(psm)->getCurrentStateUpdated(response.trajectory_start);
+  robot_state->setJointGroupPositions(joint_model_group, response.trajectory.joint_trajectory.points.back().positions);
+  moveit::core::robotStateToRobotStateMsg(*robot_state, req.start_state);
+  )*/
+
   // Pose Goal
   planning_interface::MotionPlanRequest req;
   req.pipeline_id = "ompl"; // SWAP THIS WITH OUR CUSTOM VERSION
@@ -74,6 +85,17 @@ int main(int argc, char** argv)
   req.allowed_planning_time = 1.0;
   req.max_velocity_scaling_factor = 1.0;
   req.max_acceleration_scaling_factor = 1.0;
+
+  // Set joint state starting position
+  std::vector<double> joint_values = { -1.0, 0.7, 0.7, -1.5, -0.7, 2.0, 0.0 };
+  robot_state->setJointGroupPositions(joint_model_group, joint_values);
+  // moveit_msgs::msg::Constraints joint_goal =
+  //     kinematic_constraints::constructGoalConstraints(robot_state, joint_model_group);
+
+  // req.goal_constraints.clear();
+  // req.goal_constraints.push_back(joint_goal);
+  // req.start_state.joint_state.position = joint_values;
+
   planning_interface::MotionPlanResponse res;
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "panda_link0";
@@ -118,13 +140,11 @@ int main(int argc, char** argv)
   display_publisher->publish(display_trajectory);
   visual_tools.publishTrajectoryLine(display_trajectory.trajectory.back(), joint_model_group);
   visual_tools.trigger();
-  
 
   /* Wait for user input */
   visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to finish the example");
 
   RCLCPP_INFO(LOGGER, "Done");
-
   rclcpp::shutdown();
   return 0;
 }
