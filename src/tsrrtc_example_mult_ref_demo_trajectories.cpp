@@ -11,7 +11,7 @@
 #include <moveit_msgs/msg/planning_scene.hpp>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
-static const rclcpp::Logger LOGGER = rclcpp::get_logger("motion_planning_pipeline");
+static const rclcpp::Logger LOGGER = rclcpp::get_logger("task_space_rrtc_planner");
 
 int main(int argc, char** argv)
 {
@@ -19,7 +19,7 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   rclcpp::NodeOptions node_options;
   node_options.automatically_declare_parameters_from_overrides(true);
-  auto node = rclcpp::Node::make_shared("tsrrtc_example", node_options);
+  auto node = rclcpp::Node::make_shared("tsrrtc_example_mult_ref_demo_trajectories", node_options);
 
   // Initialize single-threaded executor
   rclcpp::executors::SingleThreadedExecutor executor;

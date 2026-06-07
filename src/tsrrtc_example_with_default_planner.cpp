@@ -19,7 +19,7 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   rclcpp::NodeOptions node_options;
   node_options.automatically_declare_parameters_from_overrides(true);
-  auto node = rclcpp::Node::make_shared("tsrrtc_example", node_options);
+  auto node = rclcpp::Node::make_shared("tsrrtc_example_with_default_planner", node_options);
 
   // Initialize single-threaded executor
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -54,27 +54,6 @@ int main(int argc, char** argv)
   // This is where we need to specify our own custom planner
   planning_pipeline::PlanningPipelinePtr planning_pipeline(
       new planning_pipeline::PlanningPipeline(robot_model, node, "ompl"));
-
-  ///////////////// TROUBLESHOOTING /////////////////
-  // auto planner_manager = planning_pipeline->getPlannerManager();
-  // const auto& configs = planner_manager->getPlannerConfigurations();
-  // RCLCPP_INFO(LOGGER, "Loaded planner configurations:");
-
-  // for (const auto& [name, cfg] : configs)
-  // {
-  //   RCLCPP_INFO(LOGGER, "  Config: %s", name.c_str());
-
-  //   auto type_it = cfg.config.find("type");
-  //   if (type_it != cfg.config.end())
-  //   {
-  //     RCLCPP_INFO(LOGGER, "    Type: %s", type_it->second.c_str());
-  //   }
-  //   else
-  //   {
-  //     RCLCPP_WARN(LOGGER, "    No planner type specified");
-  //   }
-  // }
-  ///////////////////////////////////////////////////
     
   namespace rvt = rviz_visual_tools;
   moveit_visual_tools::MoveItVisualTools visual_tools(node, "panda_link0", "task_space_rrtc_planner", psm);
@@ -91,10 +70,8 @@ int main(int argc, char** argv)
 
   // Pose Goal
   planning_interface::MotionPlanRequest req;
-  req.pipeline_id = "ompl";
-  // req.planner_id = "RRTConnectkConfigDefault"; // Default
-  // req.planner_id = "myRRTConfigDefault"; // Baseline custom (just RRT)
-  req.planner_id = "TSRRTConnectConfigDefault"; // Our custom version
+  req.pipeline_id = "ompl"; // SWAP THIS WITH OUR CUSTOM VERSION
+  req.planner_id = "RRTConnectkConfigDefault"; // SWAP THIS WITH OUR CUSTOM VERSION
   req.allowed_planning_time = 1.0;
   req.max_velocity_scaling_factor = 1.0;
   req.max_acceleration_scaling_factor = 1.0;
@@ -148,10 +125,5 @@ int main(int argc, char** argv)
 
   RCLCPP_INFO(LOGGER, "Done");
   rclcpp::shutdown();
-  
-  if (spin_thread.joinable())
-  {
-    spin_thread.join();
-  }
   return 0;
 }

@@ -41,11 +41,10 @@ def generate_launch_description():
         .to_moveit_configs()
     )
 
-    # MotionPlanningPipeline demo executable
-    motion_planning_pipeline_demo = Node(
+    tsrrtc_example = Node(
         name="tsrrtc_example",
         package="task_space_rrtc_planner",
-        executable="task_space_rrtc_planner",
+        executable="tsrrtc_example",
         output="screen",
         parameters=[
             moveit_config.robot_description,
@@ -56,4 +55,40 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription([motion_planning_pipeline_demo])
+
+    # Command-line arguments
+    # tutorial_arg = DeclareLaunchArgument(
+    #     "rviz_tutorial", default_value="False", description="Tutorial flag"
+    # )
+
+    # kinematics_yaml = load_yaml(
+    #     "moveit_resources_panda_moveit_config", "config/kinematics.yaml"
+    # )
+
+    # RViz
+    # tutorial_mode = LaunchConfiguration("rviz_tutorial")
+    # rviz_base = os.path.join(get_package_share_directory("moveit2_tutorials"), "launch")
+    # rviz_full_config = os.path.join(rviz_base, "panda_moveit_config_demo.rviz")
+    # rviz_empty_config = os.path.join(rviz_base, "panda_moveit_config_demo_empty.rviz")
+    # rviz_node_tutorial = Node(
+    #     package="rviz2",
+    #     executable="rviz2",
+    #     name="rviz2",
+    #     output="log",
+    #     arguments=["-d", rviz_empty_config],
+    #     parameters=[kinematics_yaml],
+    #     condition=IfCondition(tutorial_mode),
+    # )
+    # rviz_node = Node(
+    #     package="rviz2",
+    #     executable="rviz2",
+    #     name="rviz2",
+    #     output="log",
+    #     arguments=["-d", rviz_full_config],
+    #     parameters=[kinematics_yaml],
+    #     condition=UnlessCondition(tutorial_mode),
+    # )
+
+    return LaunchDescription([
+        tsrrtc_example,
+    ])
